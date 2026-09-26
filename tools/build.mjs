@@ -168,6 +168,9 @@ function buildSetupExe(rel) {
     `/out:${out}`, `/win32icon:${icoPath}`,
     `/resource:${path.join(rel, "TypeR.ccx")},TypeR.ccx`,
     "/reference:System.Windows.Forms.dll",
+    "/reference:System.IO.Compression.dll",
+    "/reference:System.IO.Compression.FileSystem.dll",
+    "/reference:System.Web.Extensions.dll",
     path.join(ROOT, "tools", "setup", "Setup.cs"),
   ], { encoding: "utf8" });
   if (res.status !== 0) {

@@ -19,8 +19,15 @@ and the Batch/BubblR page view need **24.2+** (Imaging API).
 
 Download **[TypeR-Setup.exe](https://github.com/valle3011/TypeR-Photoshop/releases/latest/download/TypeR-Setup.exe)**
 and double-click it. The plugin is inside the file; it installs (or updates)
-TypeR through Adobe's plugin installer and says when it is done. Restart
-Photoshop, then *Plugins › TypeR › TypeR*.
+TypeR and says when it is done. Restart Photoshop, then *Plugins › TypeR ›
+TypeR*.
+
+* With the Creative Cloud app it uses Adobe's plugin installer.
+* Without it, it installs TypeR the same way that installer does — into
+  `Common Files\Adobe\UXP\Plugins\External` plus an entry in
+  `ProgramData\Adobe\UXP\PluginsInfo\v1\PS.json` (backup `PS.json.bak`) — and
+  asks for administrator rights once for that.
+* `TypeR-Setup.exe /uninstall` removes it again.
 
 The setup is not code-signed, so Windows may show *"Windows protected your
 PC"* the first time: *More info › Run anyway*.
