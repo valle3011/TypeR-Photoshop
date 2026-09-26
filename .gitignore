@@ -1,0 +1,15 @@
+# build output (the shipped build lives in release/)
+dist/
+
+# dev dependencies live outside the project (tools/devdir.cjs); vite caches
+node_modules/
+
+# generated from THIS machine's installed fonts (tools/export_fontnames.py);
+# the test skips itself when it is absent
+tests/fixtures/fontnames.json
+
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+desktop.ini

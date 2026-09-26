@@ -1,0 +1,84 @@
+{
+  "manifestVersion": 5,
+  "id": "com.typer.photoshop",
+  "name": "TypeR",
+  "version": "2.0.0",
+  "main": "index.html",
+  "host": {
+    "app": "PS",
+    "minVersion": "24.0.0",
+    "data": { "apiVersion": 2 }
+  },
+  "entrypoints": [
+    {
+      "type": "panel",
+      "id": "typer",
+      "label": { "default": "TypeR" },
+      "minimumSize": { "width": 240, "height": 260 },
+      "maximumSize": { "width": 2400, "height": 4000 },
+      "preferredDockedSize": { "width": 340, "height": 820 },
+      "preferredFloatingSize": { "width": 380, "height": 820 },
+      "icons": [
+        { "width": 23, "height": 23, "path": "icons/panel.png", "scale": [1, 2], "theme": ["all"], "species": ["chrome"] }
+      ]
+    },
+    {
+      "type": "panel",
+      "id": "typer_extra_1",
+      "label": { "default": "TypeR panel 1" },
+      "minimumSize": { "width": 200, "height": 120 },
+      "maximumSize": { "width": 2400, "height": 4000 },
+      "preferredDockedSize": { "width": 320, "height": 400 },
+      "preferredFloatingSize": { "width": 340, "height": 420 },
+      "icons": [
+        { "width": 23, "height": 23, "path": "icons/panel.png", "scale": [1, 2], "theme": ["all"], "species": ["chrome"] }
+      ]
+    },
+    {
+      "type": "panel",
+      "id": "typer_extra_2",
+      "label": { "default": "TypeR panel 2" },
+      "minimumSize": { "width": 200, "height": 120 },
+      "maximumSize": { "width": 2400, "height": 4000 },
+      "preferredDockedSize": { "width": 320, "height": 400 },
+      "preferredFloatingSize": { "width": 340, "height": 420 },
+      "icons": [
+        { "width": 23, "height": 23, "path": "icons/panel.png", "scale": [1, 2], "theme": ["all"], "species": ["chrome"] }
+      ]
+    },
+    {
+      "type": "panel",
+      "id": "typer_extra_3",
+      "label": { "default": "TypeR panel 3" },
+      "minimumSize": { "width": 200, "height": 120 },
+      "maximumSize": { "width": 2400, "height": 4000 },
+      "preferredDockedSize": { "width": 320, "height": 400 },
+      "preferredFloatingSize": { "width": 340, "height": 420 },
+      "icons": [
+        { "width": 23, "height": 23, "path": "icons/panel.png", "scale": [1, 2], "theme": ["all"], "species": ["chrome"] }
+      ]
+    }
+  ],
+  "icons": [
+    { "width": 48, "height": 48, "path": "icons/plugin.png", "scale": [1, 2], "theme": ["all"], "species": ["pluginList"] }
+  ],
+  "requiredPermissions": {
+    "localFileSystem": "fullAccess",
+    "clipboard": "readAndWrite",
+    "network": {
+      "domains": [
+        "https://accounts.google.com",
+        "https://oauth2.googleapis.com",
+        "https://docs.googleapis.com",
+        "https://www.googleapis.com",
+        "http://127.0.0.1:8765",
+        "http://localhost:8765"
+      ]
+    },
+    "launchProcess": {
+      "schemes": ["http", "https", "file"],
+      "extensions": ["", ".zip", ".png", ".json", ".txt"]
+    },
+    "allowCodeGenerationFromStrings": false
+  }
+}
