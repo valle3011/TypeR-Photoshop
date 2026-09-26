@@ -15,7 +15,17 @@ and the Batch/BubblR page view need **24.2+** (Imaging API).
 
 ## Installation
 
-### Windows — one click (recommended)
+### Windows — one file, one click (recommended)
+
+Download **[TypeR-Setup.exe](https://github.com/valle3011/TypeR-Photoshop/releases/latest/download/TypeR-Setup.exe)**
+and double-click it. The plugin is inside the file; it installs (or updates)
+TypeR through Adobe's plugin installer and says when it is done. Restart
+Photoshop, then *Plugins › TypeR › TypeR*.
+
+The setup is not code-signed, so Windows may show *"Windows protected your
+PC"* the first time: *More info › Run anyway*.
+
+### Windows — from the downloaded folder
 
 Double-click **`INSTALL.bat`**. It uses Adobe's own plugin installer (part of
 the Creative Cloud app) to install `release\TypeR.ccx`, replacing an older

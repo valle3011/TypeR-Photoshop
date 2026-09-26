@@ -10,7 +10,7 @@ Tool (Debug → Console).
 
 ## 0. Installieren
 
-1. `INSTALL.bat` doppelklicken (installiert bzw. aktualisiert `release\TypeR.ccx`
+1. `TypeR-Setup.exe` (GitHub-Release) oder `INSTALL.bat` doppelklicken (installiert bzw. aktualisiert `release\TypeR.ccx`
    und Photoshop dann neu starten) **oder** im *UXP Developer Tool*:
    *Add Plugin* → `release/plugin/manifest.json` → *Load*.
    ✅ Das Fenster meldet „FERTIG“ – sonst die Ausgabe des Fensters mitschicken.

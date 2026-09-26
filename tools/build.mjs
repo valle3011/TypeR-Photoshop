@@ -7,6 +7,7 @@
 //   node tools/build.mjs [--ccx] [--watch] [--dev]
 
 import fs from "node:fs";
+import childProcess from "node:child_process";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
@@ -134,6 +135,47 @@ async function packCcx() {
   fs.writeFileSync(path.join(rel, "TypeR.ccx"), bytes);
   copyDir(OUT, path.join(rel, "plugin"));
   console.log("release", rel);
+  buildSetupExe(rel);
+}
+
+/** release/TypeR-Setup.exe: the one-click Windows installer with the .ccx
+ *  embedded (tools/setup/Setup.cs, compiled with the .NET Framework's csc,
+ *  which ships with Windows). Skipped where csc is not available. */
+function buildSetupExe(rel) {
+  const csc = path.join(process.env.WINDIR || "C:\\Windows", "Microsoft.NET", "Framework64", "v4.0.30319", "csc.exe");
+  if (process.platform !== "win32" || !fs.existsSync(csc)) {
+    console.log("setup exe skipped (no csc.exe)");
+    return;
+  }
+  // an .ico holding one PNG image (Vista+)
+  const png = iconPng(48, false);
+  const ico = Buffer.alloc(6 + 16 + png.length);
+  ico.writeUInt16LE(0, 0);
+  ico.writeUInt16LE(1, 2);
+  ico.writeUInt16LE(1, 4);
+  ico.writeUInt8(48, 6);
+  ico.writeUInt8(48, 7);
+  ico.writeUInt16LE(1, 10);
+  ico.writeUInt16LE(32, 12);
+  ico.writeUInt32LE(png.length, 14);
+  ico.writeUInt32LE(22, 18);
+  Buffer.from(png).copy(ico, 22);
+  const icoPath = path.join(ROOT, "dist", "setup.ico");
+  fs.writeFileSync(icoPath, ico);
+  const out = path.join(rel, "TypeR-Setup.exe");
+  const res = childProcess.spawnSync(csc, [
+    "/nologo", "/target:winexe", "/optimize+", "/platform:anycpu",
+    `/out:${out}`, `/win32icon:${icoPath}`,
+    `/resource:${path.join(rel, "TypeR.ccx")},TypeR.ccx`,
+    "/reference:System.Windows.Forms.dll",
+    path.join(ROOT, "tools", "setup", "Setup.cs"),
+  ], { encoding: "utf8" });
+  if (res.status !== 0) {
+    console.error("setup exe failed:\n" + (res.stdout || "") + (res.stderr || ""));
+    process.exitCode = 1;
+    return;
+  }
+  console.log("setup", out, `(${(fs.statSync(out).size / 1024).toFixed(0)} KB)`);
 }
 
 await build();

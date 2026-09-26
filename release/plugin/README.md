@@ -15,17 +15,31 @@ and the Batch/BubblR page view need **24.2+** (Imaging API).
 
 ## Installation
 
-* **Double-click** `TypeR-2.0.0.ccx` (Creative Cloud installs it), then
-  *Plugins › TypeR › TypeR*.
-* Or with the **UXP Developer Tool**: *Add Plugin* → `dist/plugin/manifest.json`
-  → *Load* (for testing a build).
+### Windows — one click (recommended)
 
-Build from source (Node 20+; dependencies live outside the project, see
-`tools/devdir.cjs`):
+Double-click **`INSTALL.bat`**. It uses Adobe's own plugin installer (part of
+the Creative Cloud app) to install `release\TypeR.ccx`, replacing an older
+TypeR first — so the same file also **updates**. Restart Photoshop, then
+*Plugins › TypeR › TypeR*. `UNINSTALL.bat` removes it again; settings and
+presets stay in place.
+
+### macOS
+
+Double-click **`install.command`** (first time: right-click › Open).
+
+### Manual (any OS)
+
+* Double-click `release/TypeR.ccx` — the Creative Cloud app asks to install it.
+* Or with the **UXP Developer Tool**: *Add Plugin* →
+  `release/plugin/manifest.json` → *Load* (for testing).
+
+### Build from source
+
+Node 20+; dependencies live outside the project (see `tools/devdir.cjs`):
 
 ```
 node tools/build.mjs          # dist/plugin/
-node tools/build.mjs --ccx    # + dist/TypeR-2.0.0.ccx
+node tools/build.mjs --ccx    # + dist/TypeR-2.0.0.ccx and release/ (what the installers use)
 node tools/build.mjs --watch  # rebuild on change (use with the UDT "Watch")
 ```
 
