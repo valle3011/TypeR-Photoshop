@@ -6,6 +6,7 @@
 // TyperDocker.__init__): Setup, Type (with Presets), Style, BubblR, Batch,
 // TextShapR, SFX, Fonts — then restores the layout, settings and sessions.
 
+import "./host/textcodec.js";             // TextEncoder/Decoder for UXP 7.1 (first!)
 import { h } from "./ui/dom.js";
 import { TypeR, setBubblrLocked } from "./ui/app.js";
 import { Tabs, PanelMethods, ExtraHost, EXTRA_HOSTS, TAB_DEFAULTS } from "./ui/panels.js";
@@ -352,35 +353,84 @@ trace("main.js loaded, v" + (() => {
   }
 })());
 
+// The panel handlers. Photoshop 2023 (UXP 7.1) was seen never calling
+// create/show although its panel shows index.html's body — so: register the
+// full set; if that throws, only the main panel; and if after 1.5 s nothing
+// has called us, build TypeR into the visible page ourselves.
+const mainPanel = {
+  create(arg) {
+    attachMain(arg);
+  },
+  show(arg) {
+    attachMain(arg);
+  },
+  hide() {
+    flush();
+  },
+  destroy() {
+    return flush();
+  },
+};
+
+function reportSetupError(what, e) {
+  const msg = what + ": " + (e && e.stack ? e.stack : String(e));
+  trace(msg);
+  try {
+    window.__typerSetupErrors = (window.__typerSetupErrors || []).concat([msg]);
+  } catch (err) {
+    // no window
+  }
+}
+
+let entry = null;
 try {
-  const { entrypoints } = uxp();
-  trace("entrypoints.setup");
-  entrypoints.setup({
-    plugin: {
-      destroy() {
-        return flush();
-      },
-    },
-    panels: {
-      typer: {
-        create(arg) {
-          attachMain(arg);
-        },
-        show(arg) {
-          attachMain(arg);
-        },
-        hide() {
-          flush();
-        },
+  entry = uxp().entrypoints;
+} catch (e) {
+  entry = null;           // not running inside UXP (tests / bundling)
+}
+
+if (entry) {
+  let registered = false;
+  try {
+    trace("entrypoints.setup");
+    entry.setup({
+      plugin: {
+        create() {},
         destroy() {
           return flush();
         },
       },
-      typer_extra_1: extraPanel(0),
-      typer_extra_2: extraPanel(1),
-      typer_extra_3: extraPanel(2),
-    },
-  });
-} catch (e) {
-  // not running inside UXP (tests / bundling)
+      panels: {
+        typer: mainPanel,
+        typer_extra_1: extraPanel(0),
+        typer_extra_2: extraPanel(1),
+        typer_extra_3: extraPanel(2),
+      },
+    });
+    registered = true;
+  } catch (e) {
+    reportSetupError("entrypoints.setup (all panels) failed", e);
+  }
+  if (!registered) {
+    try {
+      entry.setup({ panels: { typer: mainPanel } });
+      registered = true;
+      trace("entrypoints.setup (main panel only) ok");
+    } catch (e) {
+      reportSetupError("entrypoints.setup (main panel) failed", e);
+    }
+  }
+  setTimeout(() => {
+    if (starting) return;
+    trace("no create/show after 1.5 s: building into the visible page");
+    attachMain(document.body);
+    const errs = (() => {
+      try {
+        return window.__typerSetupErrors || [];
+      } catch (e) {
+        return [];
+      }
+    })();
+    if (errs.length) setTimeout(() => showFatal(new Error(errs.join("\n\n"))), 0);
+  }, 1500);
 }

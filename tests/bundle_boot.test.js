@@ -18,7 +18,7 @@ const { Window } = nodeRequire(DEV_MODULES + "/happy-dom");
 const BUNDLE = path.join(ROOT, "dist", "plugin", "main.js");
 const HYPH = path.join(ROOT, "hyph");
 
-function boot() {
+function boot({ setupThrows = false, noTextCodec = false } = {}) {
   const win = new Window({ url: "http://localhost/", width: 360, height: 900 });
   const g = globalThis;
   for (const k of ["document", "HTMLElement", "Node", "Event", "KeyboardEvent", "MouseEvent", "getComputedStyle", "customElements",
@@ -64,6 +64,7 @@ function boot() {
     shell: { openExternal() {}, openPath() {} },
     entrypoints: {
       setup(arg) {
+        if (setupThrows) throw new Error("setup refused (test)");
         setupArg = arg;
       },
       getPanel: () => ({ show() {} }),
@@ -71,8 +72,16 @@ function boot() {
     versions: { uxp: "7.4.0" },
   };
   g.require = (id) => ({ photoshop, uxp, fs: null, os: null }[id]);
-  // run the bundle like a <script> tag
+  // run the bundle like a <script> tag; optionally without TextEncoder/Decoder (UXP 7.1)
+  const saved = [g.TextEncoder, g.TextDecoder];
+  if (noTextCodec) {
+    g.TextEncoder = undefined;
+    g.TextDecoder = undefined;
+  }
   new Function(fs.readFileSync(BUNDLE, "utf8"))();   // eslint-disable-line no-new-func
+  const polyfilled = noTextCodec && typeof g.TextDecoder === "function" && typeof g.TextEncoder === "function";
+  if (noTextCodec) [g.TextEncoder, g.TextDecoder] = saved;
+  win.__polyfilled = polyfilled;
   return { win, setup: setupArg };
 }
 
@@ -106,4 +115,22 @@ describe.skipIf(!fs.existsSync(BUNDLE))("the built plugin boots in a UXP-like ho
       expect(win.document.getElementById("typer-boot")).toBe(null);
     }, 60000);
   }
+  it("builds into the visible page when Photoshop never calls create/show (Photoshop 2023)", async () => {
+    const { win, setup } = boot({ noTextCodec: true });
+    expect(setup).toBeTruthy();
+    expect(win.__polyfilled, "TextEncoder/TextDecoder polyfills installed").toBe(true);
+    const tabs = await waitFor(() => win.document.body.querySelector(".tabbar") || win.document.body.querySelector(".fatal"));
+    const fatal = win.document.body.querySelector(".fatal");
+    expect(fatal ? fatal.textContent : "", "start-up error").toBe("");
+    expect(tabs).toBeTruthy();
+    expect(win.document.body.querySelectorAll(".tabbar .tab").length).toBe(8);
+  }, 60000);
+
+  it("still starts, and says why, when entrypoints.setup throws", async () => {
+    const { win } = boot({ setupThrows: true });
+    const tabs = await waitFor(() => win.document.body.querySelector(".tabbar"));
+    expect(tabs).toBeTruthy();
+    const fatal = await waitFor(() => win.document.body.querySelector(".fatal"));
+    expect(fatal && fatal.textContent).toContain("setup refused (test)");
+  }, 60000);
 });

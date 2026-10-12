@@ -34,13 +34,26 @@ export function hasPhotoshop() {
 }
 
 /** Photoshop's version as [major, minor]. */
-export function psVersion() {
+/** Photoshop's version string: app.version, else UXP's host info
+ *  (app.version is undefined on Photoshop 2023 / UXP 7.1). */
+export function psVersionString() {
   try {
-    const v = String(ps().app.version || "0.0").split(".");
-    return [Number(v[0]) || 0, Number(v[1]) || 0];
+    if (ps().app.version) return String(ps().app.version);
   } catch (e) {
-    return [0, 0];
+    // fall through
   }
+  try {
+    const host = uxp().host;
+    if (host && host.version) return String(host.version);
+  } catch (e) {
+    // unknown
+  }
+  return "0.0";
+}
+
+export function psVersion() {
+  const v = psVersionString().split(".");
+  return [Number(v[0]) || 0, Number(v[1]) || 0];
 }
 
 export function atLeast(major, minor = 0) {

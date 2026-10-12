@@ -33,7 +33,7 @@
     var lines = [];
     var host = "?";
     var uxpv = "?";
-    try { host = require("photoshop").app.version; } catch (e) { host = "? (" + e.message + ")"; }
+    try { host = require("photoshop").app.version || (require("uxp").host || {}).version; } catch (e) { host = "? (" + e.message + ")"; }
     try { uxpv = require("uxp").versions.uxp; } catch (e) { uxpv = "? (" + e.message + ")"; }
     lines.push("Photoshop: " + host + "   UXP: " + uxpv);
     lines.push("Unicode-Regex \\p{L}: " + has(function () { return new RegExp("\\p{L}", "u").test("a"); }));
@@ -44,6 +44,7 @@
     lines.push("globalThis: " + has(function () { return typeof globalThis === "object"; }));
     lines.push("entrypoints: " + has(function () { return typeof require("uxp").entrypoints.setup === "function"; }));
     lines.push("main.js geladen/loaded: " + (window.__typerMainLoaded ? "ja/yes" : "NEIN/NO"));
+    if (window.__typerSetupErrors) lines.push("\nsetup: " + window.__typerSetupErrors.join("\n"));
     return lines.join("\n");
   }
 
