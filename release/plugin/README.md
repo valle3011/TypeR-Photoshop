@@ -32,6 +32,15 @@ TypeR*.
 The setup is not code-signed, so Windows may show *"Windows protected your
 PC"* the first time: *More info › Run anyway*.
 
+### Updating
+
+Double-click **`UPDATE.bat`** (also works as a single downloaded file). It
+shows the installed and the newest version, downloads the newest
+`TypeR-Setup.exe` from GitHub and runs it; offline it uses the bundled
+`release\TypeR-Setup.exe`. `UPDATE.bat /check` only shows the versions,
+`UPDATE.bat /force` reinstalls even when up to date. Running the newest
+`TypeR-Setup.exe` by hand updates just the same.
+
 ### Windows — from the downloaded folder
 
 Double-click **`INSTALL.bat`**. It uses Adobe's own plugin installer (part of

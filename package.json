@@ -1,6 +1,6 @@
 {
   "name": "typer-photoshop",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "private": true,
   "description": "TypeR for Photoshop - UXP port of TypeR for Krita",
   "type": "module",

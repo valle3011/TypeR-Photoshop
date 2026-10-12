@@ -16,7 +16,7 @@ import * as L from "../core/layout.js";
 import * as TT from "../core/texttypes.js";
 import { prepareText } from "../core/textprep.js";
 
-export const VERSION = "2.0.1";
+export const VERSION = "2.0.2";
 
 // BubblR (AI detection) is locked unless a `bubblr_dev` marker file sits in
 // the plugin folder — exactly like the Krita build (see FEATURES.md).

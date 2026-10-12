@@ -103,7 +103,10 @@ async function build() {
   fs.copyFileSync(path.join(ROOT, "src", "styles.css"), path.join(OUT, "styles.css"));
   copyDir(path.join(ROOT, "hyph"), path.join(OUT, "hyph"));
   fs.mkdirSync(path.join(OUT, "icons"), { recursive: true });
+  // UXP resolves "icons/panel.png" with scale [1, 2] to panel@1x.png / panel@2x.png
   fs.writeFileSync(path.join(OUT, "icons", "panel.png"), iconPng(23, true));
+  fs.writeFileSync(path.join(OUT, "icons", "panel@1x.png"), iconPng(23, true));
+  fs.writeFileSync(path.join(OUT, "icons", "plugin@1x.png"), iconPng(48, false));
   fs.writeFileSync(path.join(OUT, "icons", "panel@2x.png"), iconPng(46, true));
   fs.writeFileSync(path.join(OUT, "icons", "plugin.png"), iconPng(48, false));
   fs.writeFileSync(path.join(OUT, "icons", "plugin@2x.png"), iconPng(96, false));

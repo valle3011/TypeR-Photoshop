@@ -187,6 +187,23 @@ let appInstance = null;
 let starting = null;
 let mainRoot = null;
 
+/** Breadcrumbs in Photoshop's UXP log (…\UXPLogs\*.log, "[console]"), so a
+ *  panel that stays empty still says how far TypeR got. */
+function trace(msg) {
+  try {
+    console.log("[TypeR] " + msg);   // eslint-disable-line no-console
+  } catch (e) {
+    // no console
+  }
+}
+
+function describeNode(arg) {
+  if (!arg) return String(arg);
+  const kind = typeof arg.appendChild === "function" ? "node" : arg.node ? "{node}" : "object";
+  const tag = (arg.tagName || (arg.node && arg.node.tagName) || "").toLowerCase();
+  return kind + (tag ? " <" + tag + ">" : "");
+}
+
 function panelNode(arg) {
   const n = arg && arg.node && typeof arg.node.appendChild === "function" ? arg.node : arg;
   return n && typeof n.appendChild === "function" ? n : document.body;
@@ -215,6 +232,7 @@ async function writeErrorLog(text) {
 
 function showFatal(e) {
   const msg = "TypeR could not start / konnte nicht starten:\n\n" + (e && e.stack ? e.stack : String(e));
+  trace("FATAL " + msg);
   console.error(msg);   // eslint-disable-line no-console
   const target = mainRoot || document.body;
   try {
@@ -245,16 +263,22 @@ function showFatal(e) {
 }
 
 async function start(root) {
+  trace("start: settings");
   await initSettings();
+  trace("start: hyphenation");
   await preloadHyphenation();
   setBubblrLocked(!(await pluginFileExists("bubblr_dev")));
+  trace("start: building the panel");
   appInstance = buildApp(root);
+  trace("ready (" + root.querySelectorAll(".panel").length + " panels, " +
+    Math.round(root.getBoundingClientRect ? root.getBoundingClientRect().height : -1) + " px high)");
   return appInstance;
 }
 
 /** Attach TypeR's root to the panel and start it once. */
 function attachMain(arg) {
   const target = panelNode(arg);
+  trace("attach: got " + describeNode(arg) + (target === document.body ? " -> document.body" : ""));
   if (!mainRoot) {
     mainRoot = document.createElement("div");
     mainRoot.className = "typer-root";
@@ -310,8 +334,17 @@ try {
   // no window (tests)
 }
 
+trace("main.js loaded, v" + (() => {
+  try {
+    return uxp().versions.uxp;
+  } catch (e) {
+    return "?";
+  }
+})());
+
 try {
   const { entrypoints } = uxp();
+  trace("entrypoints.setup");
   entrypoints.setup({
     plugin: {
       destroy() {

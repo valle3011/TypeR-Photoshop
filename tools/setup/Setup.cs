@@ -5,15 +5,23 @@
 //      Creative Cloud app): an older TypeR is removed, this one installed;
 //   2. without it (no Creative Cloud app — the .ccx is then often associated
 //      with Photoshop itself, which only answers "not the right kind of
-//      document"), the setup does what Adobe's installer does: it unpacks the
-//      plugin into  %CommonProgramFiles%\Adobe\UXP\Plugins\External\<id>_<version>
-//      and registers it in  %ProgramData%\Adobe\UXP\PluginsInfo\v1\PS.json
-//      (a backup PS.json.bak is kept). This needs administrator rights, so the
-//      setup asks for them (UAC) only on this path;
+//      document"), the setup unpacks the plugin into
+//        %CommonProgramFiles%\Adobe\UXP\Plugins\External\<id>_<version>
+//      Photoshop's UXP loader reads its plugin list from
+//        %CommonProgramFiles%\Adobe\UXP\PluginsInfo\v1\PS.json
+//      and, when that file does not exist, scans that External folder itself
+//      (UXP log: "Loading plugins from system fallback plugins folder"). So the
+//      plugin is entered into PS.json only when that file exists (then it is
+//      the list Photoshop uses; a backup PS.json.bak is kept); without it the
+//      folder alone is enough. Older setups wrote an entry to
+//      %ProgramData%\...\PS.json, which Photoshop does not read — it is removed.
+//      Photoshop must be closed (it reads the list at start). This path needs
+//      administrator rights, so the setup asks for them (UAC) only here;
 //   3. a message says what happened.
 // The same file updates an older TypeR.  TypeR-Setup.exe /uninstall  removes it.
 //
-// Test switches (no UI, no admin): /quiet /direct /root:<plugins dir> /info:<PS.json>
+// Test switches (no UI, no admin): /quiet /direct /root:<plugins dir>
+//   /info:<PS.json Photoshop reads> /oldinfo:<old ProgramData PS.json>
 // Built by tools/build.mjs --ccx with the .NET Framework compiler (C# 5).
 
 using System;
@@ -31,7 +39,7 @@ using System.Windows.Forms;
 
 [assembly: AssemblyTitle("TypeR for Photoshop - Setup")]
 [assembly: AssemblyProduct("TypeR for Photoshop")]
-[assembly: AssemblyVersion("2.0.1.0")]
+[assembly: AssemblyVersion("2.0.2.0")]
 
 static class Setup
 {
@@ -42,7 +50,8 @@ static class Setup
     static bool forceDirect;    // skip Adobe's installer (tests)
     static bool uninstall;
     static string pluginsRoot;  // %CommonProgramFiles%\Adobe\UXP\Plugins
-    static string pluginsInfo;  // %ProgramData%\Adobe\UXP\PluginsInfo\v1\PS.json
+    static string pluginsInfo;  // %CommonProgramFiles%\Adobe\UXP\PluginsInfo\v1\PS.json (read by Photoshop)
+    static string oldInfo;      // %ProgramData%\Adobe\UXP\PluginsInfo\v1\PS.json (written by setup 2.0.0/2.0.1)
     static bool customPaths;
 
     static string T(string en, string de) { return De ? de : en; }
@@ -53,7 +62,8 @@ static class Setup
         string common = Environment.GetEnvironmentVariable("CommonProgramW6432");
         if (string.IsNullOrEmpty(common)) common = Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFiles);
         pluginsRoot = Path.Combine(common, @"Adobe\UXP\Plugins");
-        pluginsInfo = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Adobe\UXP\PluginsInfo\v1\PS.json");
+        pluginsInfo = Path.Combine(common, @"Adobe\UXP\PluginsInfo\v1\PS.json");
+        oldInfo = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Adobe\UXP\PluginsInfo\v1\PS.json");
         foreach (string a in args)
         {
             string l = a.ToLowerInvariant();
@@ -62,6 +72,7 @@ static class Setup
             else if (l == "/uninstall") uninstall = true;
             else if (l.StartsWith("/root:")) { pluginsRoot = a.Substring(6); customPaths = true; }
             else if (l.StartsWith("/info:")) { pluginsInfo = a.Substring(6); customPaths = true; }
+            else if (l.StartsWith("/oldinfo:")) { oldInfo = a.Substring(9); customPaths = true; }
         }
 
         string ccx;
@@ -87,6 +98,7 @@ static class Setup
         if (uninstall)
         {
             string output;
+            if (!WaitForPhotoshopClosed()) return 1;
             if (upia != null) Run(upia, "/remove \"" + plugin.Name + "\"", out output);
             if (!customPaths && NeedsElevation()) return Elevate(args);
             try
@@ -102,6 +114,8 @@ static class Setup
             }
         }
 
+        if (!WaitForPhotoshopClosed()) return 1;
+
         string upiaProblem = null;
         if (upia != null)
         {
@@ -112,7 +126,7 @@ static class Setup
             bool failed = !success && (code != 0 || output.IndexOf("fail", StringComparison.OrdinalIgnoreCase) >= 0);
             if (!failed)
             {
-                Done();
+                Done(plugin, null);
                 return 0;
             }
             upiaProblem = Short(output);
@@ -120,9 +134,10 @@ static class Setup
 
         // no Creative Cloud installer (or it failed): install like it does
         if (!customPaths && NeedsElevation()) return Elevate(args);
+        string where;
         try
         {
-            InstallDirect(ccx, plugin);
+            where = InstallDirect(ccx, plugin);
         }
         catch (Exception e)
         {
@@ -130,18 +145,32 @@ static class Setup
                  + (upiaProblem != null ? T("\n\nAdobe's installer said:\n", "\n\nAdobes Installer meldete:\n") + upiaProblem : ""));
             return 1;
         }
-        Done();
+        Done(plugin, where);
         return 0;
     }
 
-    static void Done()
+    static void Done(Plugin p, string where)
     {
-        bool running = Process.GetProcessesByName("Photoshop").Length > 0;
-        Info(T("TypeR is installed.\n\n", "TypeR ist installiert.\n\n")
-             + (running ? T("Close Photoshop and start it again, then open TypeR with\nPlugins > TypeR > TypeR.",
-                            "Photoshop schließen und neu starten, dann TypeR öffnen über\nPlugins > TypeR > TypeR.")
-                        : T("Start Photoshop and open TypeR with\nPlugins > TypeR > TypeR.",
-                            "Photoshop starten und TypeR öffnen über\nPlugins > TypeR > TypeR.")));
+        Info(T("TypeR " + p.Version + " is installed.", "TypeR " + p.Version + " ist installiert.")
+             + (where != null ? "\n" + where : "")
+             + T("\n\nStart Photoshop and open TypeR with\nPlugins > TypeR > TypeR.\nThe panel shows the version at the bottom.",
+                 "\n\nPhotoshop starten und TypeR öffnen über\nPlugins > TypeR > TypeR.\nUnten im Panel steht die Version."));
+    }
+
+    /// Photoshop reads its plugin list only at start, and a running
+    /// Photoshop can hold the old plugin's files: ask to close it first.
+    static bool WaitForPhotoshopClosed()
+    {
+        if (quiet || customPaths) return true;
+        while (Process.GetProcessesByName("Photoshop").Length > 0)
+        {
+            DialogResult r = MessageBox.Show(
+                T("Please close Photoshop first, then click OK.\n\n(Photoshop only loads plugins when it starts.)",
+                  "Bitte zuerst Photoshop schließen, dann auf OK klicken.\n\n(Photoshop lädt Plugins nur beim Start.)"),
+                Title, MessageBoxButtons.OKCancel, MessageBoxIcon.Warning);
+            if (r != DialogResult.OK) return false;
+        }
+        return true;
     }
 
     // --- direct install (what Adobe's installer writes) -----------------------
@@ -152,6 +181,11 @@ static class Setup
 
         public string Folder { get { return Id + "_" + Version; } }
 
+        public static Plugin FromManifest(string path)
+        {
+            return Parse(File.ReadAllText(path, Encoding.UTF8));
+        }
+
         public static Plugin FromCcx(string ccx)
         {
             using (ZipArchive zip = ZipFile.OpenRead(ccx))
@@ -160,19 +194,26 @@ static class Setup
                 if (e == null) throw new InvalidDataException("manifest.json missing");
                 string json;
                 using (StreamReader r = new StreamReader(e.Open(), Encoding.UTF8)) json = r.ReadToEnd();
-                Dictionary<string, object> m = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(json);
-                Plugin p = new Plugin();
-                p.Id = (string)m["id"];
-                p.Name = (string)m["name"];
-                p.Version = (string)m["version"];
-                Dictionary<string, object> host = m["host"] as Dictionary<string, object>;
-                p.HostMin = host != null && host.ContainsKey("minVersion") ? (string)host["minVersion"] : "24.0.0";
-                return p;
+                return Parse(json);
             }
+        }
+
+        static Plugin Parse(string json)
+        {
+            Dictionary<string, object> m = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(json);
+            Plugin p = new Plugin();
+            p.Id = (string)m["id"];
+            p.Name = (string)m["name"];
+            p.Version = (string)m["version"];
+            Dictionary<string, object> host = m["host"] as Dictionary<string, object>;
+            p.HostMin = host != null && host.ContainsKey("minVersion") ? (string)host["minVersion"] : "24.0.0";
+            return p;
         }
     }
 
-    static void InstallDirect(string ccx, Plugin p)
+    /// Unpack + verify; enter into PS.json only where Photoshop reads it.
+    /// Returns the install folder.
+    static string InstallDirect(string ccx, Plugin p)
     {
         string external = Path.Combine(pluginsRoot, "External");
         Directory.CreateDirectory(external);
@@ -180,38 +221,54 @@ static class Setup
         string target = Path.Combine(external, p.Folder);
         ZipFile.ExtractToDirectory(ccx, target);
 
-        List<object> plugins;
-        Dictionary<string, object> doc = LoadInfo(out plugins);
-        plugins.RemoveAll(delegate (object o) { return IsOurs(o, p); });
-        Dictionary<string, object> entry = new Dictionary<string, object>();
-        entry["hostMinVersion"] = p.HostMin;
-        entry["name"] = p.Name;
-        entry["path"] = "$localPlugins\\External\\" + p.Folder;
-        entry["pluginId"] = p.Id;
-        entry["status"] = "enabled";
-        entry["type"] = "uxp";
-        entry["versionString"] = p.Version;
-        plugins.Add(entry);
-        doc["plugins"] = plugins;
-        SaveInfo(doc);
+        // verify: exactly this version is in place and nothing older is left
+        Plugin installed = Plugin.FromManifest(Path.Combine(target, "manifest.json"));
+        if (installed.Version != p.Version) throw new IOException("installed version " + installed.Version + " != " + p.Version);
+        string[] left = Directory.GetDirectories(external, p.Id + "_*");
+        if (left.Length != 1) throw new IOException("old TypeR folders could not be removed: " + string.Join(", ", left));
+
+        if (File.Exists(pluginsInfo))
+        {
+            List<object> plugins;
+            Dictionary<string, object> doc = LoadInfo(pluginsInfo, out plugins);
+            plugins.RemoveAll(delegate (object o) { return IsOurs(o, p); });
+            Dictionary<string, object> entry = new Dictionary<string, object>();
+            entry["hostMinVersion"] = p.HostMin;
+            entry["name"] = p.Name;
+            entry["path"] = "$localPlugins\\External\\" + p.Folder;
+            entry["pluginId"] = p.Id;
+            entry["status"] = "enabled";
+            entry["type"] = "uxp";
+            entry["versionString"] = p.Version;
+            plugins.Add(entry);
+            doc["plugins"] = plugins;
+            SaveInfo(pluginsInfo, doc);
+        }
+        RemoveEntry(oldInfo, p);
+        return target;
     }
 
     static int RemoveDirect(Plugin p)
     {
         int n = RemoveFolders(p);
-        if (File.Exists(pluginsInfo))
-        {
-            List<object> plugins;
-            Dictionary<string, object> doc = LoadInfo(out plugins);
-            int removed = plugins.RemoveAll(delegate (object o) { return IsOurs(o, p); });
-            if (removed > 0)
-            {
-                doc["plugins"] = plugins;
-                SaveInfo(doc);
-                n += removed;
-            }
-        }
+        n += RemoveEntry(pluginsInfo, p);
+        n += RemoveEntry(oldInfo, p);
         return n;
+    }
+
+    /// Remove our entry from a PS.json, if the file and the entry exist.
+    static int RemoveEntry(string path, Plugin p)
+    {
+        if (!File.Exists(path)) return 0;
+        List<object> plugins;
+        Dictionary<string, object> doc = LoadInfo(path, out plugins);
+        int removed = plugins.RemoveAll(delegate (object o) { return IsOurs(o, p); });
+        if (removed > 0)
+        {
+            doc["plugins"] = plugins;
+            SaveInfo(path, doc);
+        }
+        return removed;
     }
 
     static int RemoveFolders(Plugin p)
@@ -235,7 +292,7 @@ static class Setup
 
     /// PS.json as a dictionary; a file that is there but unreadable is never
     /// overwritten (the other plugins' registrations live in it).
-    static Dictionary<string, object> LoadInfo(out List<object> plugins)
+    static Dictionary<string, object> LoadInfo(string pluginsInfo, out List<object> plugins)
     {
         Dictionary<string, object> doc = new Dictionary<string, object>();
         plugins = new List<object>();
@@ -253,7 +310,7 @@ static class Setup
         return doc;
     }
 
-    static void SaveInfo(Dictionary<string, object> doc)
+    static void SaveInfo(string pluginsInfo, Dictionary<string, object> doc)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(pluginsInfo));
         if (File.Exists(pluginsInfo)) File.Copy(pluginsInfo, pluginsInfo + ".bak", true);
