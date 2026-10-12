@@ -18,7 +18,7 @@ import { FontsMethods } from "./ui/fontstab.js";
 import { TextShapRWidget } from "./ui/shapr.js";
 import { SfxPanel } from "./ui/sfx.js";
 import { initSettings, flush, T } from "./host/settings.js";
-import { uxp } from "./host/ps.js";
+import { uxp, ps } from "./host/ps.js";
 import { readPluginText, pluginFileExists } from "./host/files.js";
 import { setHyphLoader, HYPH_LANGS } from "./core/layout.js";
 import * as TT from "./core/texttypes.js";
@@ -175,31 +175,120 @@ export function buildApp(root) {
 }
 
 // --- UXP entrypoints -------------------------------------------------------------
+//
+// Photoshop hands the panel's node to create/show — depending on the UXP
+// version as the node itself or as {node}. TypeR builds into its own <div>
+// and attaches it wherever the panel lives (falling back to document.body),
+// and it starts from create OR show, whichever comes first. Any start-up
+// error is shown in the panel and written to typer-error.log in the data
+// folder, so an empty panel can never hide what went wrong.
 
 let appInstance = null;
 let starting = null;
+let mainRoot = null;
+
+function panelNode(arg) {
+  const n = arg && arg.node && typeof arg.node.appendChild === "function" ? arg.node : arg;
+  return n && typeof n.appendChild === "function" ? n : document.body;
+}
+
+function removeBootNote() {
+  try {
+    const boot = document.getElementById("typer-boot");
+    if (boot) boot.remove();
+  } catch (e) {
+    // nothing to remove
+  }
+}
+
+async function writeErrorLog(text) {
+  try {
+    const lfs = uxp().storage.localFileSystem;
+    const folder = await lfs.getDataFolder();
+    const f = await folder.createFile("typer-error.log", { overwrite: true });
+    await f.write(text, { format: uxp().storage.formats.utf8 });
+    return f.nativePath;
+  } catch (e) {
+    return null;
+  }
+}
+
+function showFatal(e) {
+  const msg = "TypeR could not start / konnte nicht starten:\n\n" + (e && e.stack ? e.stack : String(e));
+  console.error(msg);   // eslint-disable-line no-console
+  const target = mainRoot || document.body;
+  try {
+    const pre = document.createElement("pre");
+    pre.className = "fatal";
+    pre.textContent = msg;
+    target.appendChild(pre);
+  } catch (err) {
+    // the DOM itself failed: the log file is all that is left
+  }
+  writeErrorLog(msg + "\n\nPhotoshop: " + (() => {
+    try {
+      return ps().app.version;
+    } catch (err) {
+      return "?";
+    }
+  })()).then((path) => {
+    if (!path) return;
+    try {
+      const note = document.createElement("div");
+      note.className = "hint";
+      note.textContent = "Log: " + path;
+      target.appendChild(note);
+    } catch (err) {
+      // shown on screen already
+    }
+  });
+}
 
 async function start(root) {
   await initSettings();
   await preloadHyphenation();
   setBubblrLocked(!(await pluginFileExists("bubblr_dev")));
-  root.classList.add("typer-root");
   appInstance = buildApp(root);
   return appInstance;
 }
 
+/** Attach TypeR's root to the panel and start it once. */
+function attachMain(arg) {
+  const target = panelNode(arg);
+  if (!mainRoot) {
+    mainRoot = document.createElement("div");
+    mainRoot.className = "typer-root";
+  }
+  removeBootNote();
+  if (mainRoot.parentNode !== target) target.appendChild(mainRoot);
+  if (!starting) {
+    starting = start(mainRoot).catch((e) => {
+      showFatal(e);
+      return null;
+    });
+  }
+}
+
 function extraPanel(slot) {
   return {
-    create(node) {
-      let api = null;
+    create(arg) {
       try {
-        api = { show: () => uxp().entrypoints.getPanel(`typer_extra_${slot + 1}`).show() };
+        const node = panelNode(arg);
+        let api = null;
+        try {
+          api = { show: () => uxp().entrypoints.getPanel(`typer_extra_${slot + 1}`).show() };
+        } catch (e) {
+          api = null;
+        }
+        if (!EXTRA_HOSTS[slot]) EXTRA_HOSTS[slot] = new ExtraHost(slot, node, api);
+        EXTRA_HOSTS[slot].setHint(appInstance ? appInstance._tr("detach_host_hint") : "");
+        if (appInstance) appInstance._apply_detached();
       } catch (e) {
-        api = null;
+        console.error("TypeR extra panel", e);   // eslint-disable-line no-console
       }
-      EXTRA_HOSTS[slot] = new ExtraHost(slot, node, api);
-      EXTRA_HOSTS[slot].setHint(appInstance ? appInstance._tr("detach_host_hint") : "");
-      if (appInstance) appInstance._apply_detached();
+    },
+    show(arg) {
+      if (!EXTRA_HOSTS[slot]) this.create(arg);
     },
     destroy() {
       if (appInstance) {
@@ -208,6 +297,17 @@ function extraPanel(slot) {
       delete EXTRA_HOSTS[slot];
     },
   };
+}
+
+try {
+  window.addEventListener("error", (ev) => {
+    if (!appInstance) showFatal(ev && (ev.error || ev.message));
+  });
+  window.addEventListener("unhandledrejection", (ev) => {
+    if (!appInstance) showFatal(ev && ev.reason);
+  });
+} catch (e) {
+  // no window (tests)
 }
 
 try {
@@ -220,15 +320,12 @@ try {
     },
     panels: {
       typer: {
-        create(node) {
-          if (!starting) {
-            starting = start(node).catch((e) => {
-              node.appendChild(h("pre", { class: "fatal", text: "TypeR could not start:\n" + (e && e.stack ? e.stack : e) }));
-            });
-          }
-          return starting;
+        create(arg) {
+          attachMain(arg);
         },
-        show() {},
+        show(arg) {
+          attachMain(arg);
+        },
         hide() {
           flush();
         },
