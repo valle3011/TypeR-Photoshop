@@ -100,6 +100,7 @@ async function build() {
   });
   fs.copyFileSync(path.join(ROOT, "manifest.json"), path.join(OUT, "manifest.json"));
   fs.copyFileSync(path.join(ROOT, "src", "index.html"), path.join(OUT, "index.html"));
+  fs.copyFileSync(path.join(ROOT, "src", "boot.js"), path.join(OUT, "boot.js"));   // start guard, plain ES5
   fs.copyFileSync(path.join(ROOT, "src", "styles.css"), path.join(OUT, "styles.css"));
   copyDir(path.join(ROOT, "hyph"), path.join(OUT, "hyph"));
   fs.mkdirSync(path.join(OUT, "icons"), { recursive: true });

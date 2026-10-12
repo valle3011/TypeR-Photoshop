@@ -279,6 +279,11 @@ async function start(root) {
 function attachMain(arg) {
   const target = panelNode(arg);
   trace("attach: got " + describeNode(arg) + (target === document.body ? " -> document.body" : ""));
+  try {
+    window.__typerStarted = true;       // boot.js stops waiting
+  } catch (e) {
+    // no window (tests)
+  }
   if (!mainRoot) {
     mainRoot = document.createElement("div");
     mainRoot.className = "typer-root";
@@ -334,6 +339,11 @@ try {
   // no window (tests)
 }
 
+try {
+  window.__typerMainLoaded = true;      // read by boot.js
+} catch (e) {
+  // no window (tests)
+}
 trace("main.js loaded, v" + (() => {
   try {
     return uxp().versions.uxp;
