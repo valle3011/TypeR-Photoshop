@@ -18,7 +18,7 @@ const { Window } = nodeRequire(DEV_MODULES + "/happy-dom");
 const BUNDLE = path.join(ROOT, "dist", "plugin", "main.js");
 const HYPH = path.join(ROOT, "hyph");
 
-function boot({ setupThrows = false, noTextCodec = false } = {}) {
+function boot({ setupThrows = false, noTextCodec = false, oldDom = false } = {}) {
   const win = new Window({ url: "http://localhost/", width: 360, height: 900 });
   const g = globalThis;
   for (const k of ["document", "HTMLElement", "Node", "Event", "KeyboardEvent", "MouseEvent", "getComputedStyle", "customElements",
@@ -27,6 +27,7 @@ function boot({ setupThrows = false, noTextCodec = false } = {}) {
   }
   Object.defineProperty(g, "navigator", { value: win.navigator, configurable: true });
   g.window = win;
+  if (oldDom) stripModernDom(win);
   let setupArg = null;
   const photoshop = {
     app: {
@@ -85,6 +86,22 @@ function boot({ setupThrows = false, noTextCodec = false } = {}) {
   return { win, setup: setupArg };
 }
 
+/** Make happy-dom look like UXP 7.1: no append/prepend/remove/closest/
+ *  matches/replaceChildren, and classList.toggle ignores its force flag. */
+function stripModernDom(win) {
+  const probe = win.document.createElement("div");
+  for (let p = Object.getPrototypeOf(probe); p; p = Object.getPrototypeOf(p)) {
+    for (const k of ["append", "prepend", "remove", "closest", "matches", "replaceChildren"]) {
+      if (Object.prototype.hasOwnProperty.call(p, k)) delete p[k];
+    }
+  }
+  const listProto = Object.getPrototypeOf(probe.classList);
+  const plain = listProto.toggle;
+  listProto.toggle = function toggle(c) {
+    return plain.call(this, c);
+  };
+}
+
 async function waitFor(fn, ms = 20000) {
   const t0 = Date.now();
   for (;;) {
@@ -132,5 +149,15 @@ describe.skipIf(!fs.existsSync(BUNDLE))("the built plugin boots in a UXP-like ho
     expect(tabs).toBeTruthy();
     const fatal = await waitFor(() => win.document.body.querySelector(".fatal"));
     expect(fatal && fatal.textContent).toContain("setup refused (test)");
+  }, 60000);
+  it("starts on a DOM without append/remove/closest and with a force-less classList.toggle (UXP 7.1)", async () => {
+    const { win } = boot({ oldDom: true, noTextCodec: true });
+    const tabs = await waitFor(() => win.document.body.querySelector(".tabbar") || win.document.body.querySelector(".fatal"));
+    const fatal = win.document.body.querySelector(".fatal");
+    expect(fatal ? fatal.textContent : "", "start-up error").toBe("");
+    expect(tabs).toBeTruthy();
+    expect(win.document.body.querySelectorAll(".tabbar .tab").length).toBe(8);
+    // exactly one tab is selected: classList.toggle(…, force) works
+    expect(win.document.body.querySelectorAll(".tabbar .tab.selected").length).toBe(1);
   }, 60000);
 });

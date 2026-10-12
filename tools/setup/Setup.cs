@@ -39,7 +39,7 @@ using System.Windows.Forms;
 
 [assembly: AssemblyTitle("TypeR for Photoshop - Setup")]
 [assembly: AssemblyProduct("TypeR for Photoshop")]
-[assembly: AssemblyVersion("2.0.4.0")]
+[assembly: AssemblyVersion("2.0.5.0")]
 
 static class Setup
 {

@@ -7,6 +7,7 @@
 // TextShapR, SFX, Fonts — then restores the layout, settings and sessions.
 
 import "./host/textcodec.js";             // TextEncoder/Decoder for UXP 7.1 (first!)
+import "./host/domcompat.js";             // append/remove/closest/… for UXP 7.1
 import { h } from "./ui/dom.js";
 import { TypeR, setBubblrLocked } from "./ui/app.js";
 import { Tabs, PanelMethods, ExtraHost, EXTRA_HOSTS, TAB_DEFAULTS } from "./ui/panels.js";
