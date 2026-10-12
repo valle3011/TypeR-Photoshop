@@ -961,9 +961,9 @@ export const TypeTabMethods = {
       underline: this.underline_chk.isChecked(),
       ligatures: this.liga_chk.isChecked(),
       color: this._color,
-      align: this.align_combo.value() || "center",
-      valign: this.valign_combo.value() || "middle",
-      case: this.case_combo.value() || "none",
+      align: this.align_combo.val() || "center",
+      valign: this.valign_combo.val() || "middle",
+      case: this.case_combo.val() || "none",
       tidy: this.tidy_chk.isChecked(),
       comic: this.comic_chk.isChecked(),
       crossbarI: this.crossbar_chk.isChecked(),
@@ -982,7 +982,7 @@ export const TypeTabMethods = {
       hyphenate: this.hyph_chk.isChecked() && this.auto_chk.isChecked(),
       hyphLang: this._hyph_lang_for(text),
       outlinePattern: po ? this._outline_tile() : null,
-      outlinePatternTarget: po ? this.outline_pattern_target_combo.value() || "outline1" : "outline1",
+      outlinePatternTarget: po ? this.outline_pattern_target_combo.val() || "outline1" : "outline1",
       soft: po && this.style_soft_chk.isChecked(),
       softPx: this.style_soft_width_spin.num(),
       softBlur: this.style_soft_blur_spin.num(),
@@ -1017,7 +1017,7 @@ export const TypeTabMethods = {
   // -- balloon -------------------------------------------------------------------------------------
 
   _on_balloon_changed() {
-    const sid = this.balloon_combo.value() || "";
+    const sid = this.balloon_combo.val() || "";
     const tid = BAL.SHAPE_FOR_TYPE[sid];
     this.balloon_hint.textContent = tid ? this._tr("balloon_hint", { kind: this._tr("tt_" + tid) }) : "";
   },
@@ -1039,7 +1039,7 @@ export const TypeTabMethods = {
       }
       box = sel;
     }
-    const shape = this.balloon_combo.value() || "oval";
+    const shape = this.balloon_combo.val() || "oval";
     const [ok, key, fmt] = await insertBalloon(shape, box, {
       tail: this.balloon_tail_chk.isChecked(),
       layerIndex: this._pairs.length ? this._index + 1 : null,

@@ -229,7 +229,7 @@ export const SetupTabMethods = {
   },
 
   _move_tab(delta) {
-    const id = this.tab_move_combo.value();
+    const id = this.tab_move_combo.val();
     if (!id) return;
     this.tabs.move(id, delta);
     this._refresh_tab_move_combo();

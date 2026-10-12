@@ -709,18 +709,18 @@ export const StyleTabMethods = {
     const pv = h("img", { class: "patgen-preview" });
     const isGradient = () => gradient.isChecked();
     const gradSpec = () => (isGradient() ? {
-      kind: kind.value(), fg: fgc, bg: transparent.isChecked() ? null : bgc, size: size.num(), gap: gap.num(), angleDeg: dir.value() || 0,
+      kind: kind.val(), fg: fgc, bg: transparent.isChecked() ? null : bgc, size: size.num(), gap: gap.num(), angleDeg: dir.val() || 0,
     } : null);
     const currentTile = () => {
       const bg = transparent.isChecked() ? null : bgc;
-      if (isGradient()) return makePatternGradient(kind.value(), fgc, bg, size.num(), gap.num(), dir.value() || 0);
-      return makePattern(kind.value() === "smooth" ? "dots" : kind.value(), fgc, bg, size.num(), gap.num());
+      if (isGradient()) return makePatternGradient(kind.val(), fgc, bg, size.num(), gap.num(), dir.val() || 0);
+      return makePattern(kind.val() === "smooth" ? "dots" : kind.val(), fgc, bg, size.num(), gap.num());
     };
     let tileNow = null;
     const update = () => {
       const grad = isGradient();
       dir.setEnabled(grad);
-      const smooth = grad && kind.value() === "smooth";
+      const smooth = grad && kind.val() === "smooth";
       size.setEnabled(!smooth);
       gap.setEnabled(!smooth);
       bgBtn.setEnabled(!transparent.isChecked());
@@ -817,7 +817,7 @@ export const StyleTabMethods = {
   },
 
   _rebuild_text_type_combo() {
-    const prevVal = this.text_type_combo.value();
+    const prevVal = this.text_type_combo.val();
     this.text_type_combo.setItems([{ label: this._tr("tt_none"), value: "" }, ...TT.ids().map((tid) => ({ label: this._tt_label(tid), value: tid }))], false);
     if (!this.text_type_combo.setValue(prevVal)) this.text_type_combo.setIndex(0);
   },
@@ -856,7 +856,7 @@ export const StyleTabMethods = {
   },
 
   _on_text_type_changed() {
-    const tid = this.text_type_combo.value() || "";
+    const tid = this.text_type_combo.val() || "";
     if (!tid) {
       this.text_type_hint.textContent = "";
       return;
@@ -866,7 +866,7 @@ export const StyleTabMethods = {
   },
 
   on_text_type_apply() {
-    const tid = this.text_type_combo.value() || "";
+    const tid = this.text_type_combo.val() || "";
     if (!tid) {
       this._set_status(this._tr("st_tt_pick"), true);
       return;

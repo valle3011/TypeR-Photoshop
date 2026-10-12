@@ -95,6 +95,18 @@ function stripModernDom(win) {
       if (Object.prototype.hasOwnProperty.call(p, k)) delete p[k];
     }
   }
+  // UXP's native elements (sp-picker, sp-textfield, …) own a `value`
+  // property: assigning a function to it stores a string instead
+  const store = new WeakMap();
+  Object.defineProperty(win.HTMLElement.prototype, "value", {
+    configurable: true,
+    get() {
+      return store.has(this) ? store.get(this) : "";
+    },
+    set(v) {
+      store.set(this, String(v));
+    },
+  });
   const listProto = Object.getPrototypeOf(probe.classList);
   const plain = listProto.toggle;
   listProto.toggle = function toggle(c) {

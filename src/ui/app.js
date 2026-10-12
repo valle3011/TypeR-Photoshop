@@ -16,7 +16,7 @@ import * as L from "../core/layout.js";
 import * as TT from "../core/texttypes.js";
 import { prepareText } from "../core/textprep.js";
 
-export const VERSION = "2.0.5";
+export const VERSION = "2.0.6";
 
 // BubblR (AI detection) is locked unless a `bubblr_dev` marker file sits in
 // the plugin folder — exactly like the Krita build (see FEATURES.md).
@@ -134,9 +134,9 @@ export class TypeR {
       italic: this.italic_chk.isChecked(),
       underline: this.underline_chk.isChecked(),
       ligatures: this.liga_chk.isChecked(),
-      align: this.align_combo.value() || "center",
-      valign: this.valign_combo.value() || "middle",
-      case: this.case_combo.value() || "none",
+      align: this.align_combo.val() || "center",
+      valign: this.valign_combo.val() || "middle",
+      case: this.case_combo.val() || "none",
       tidy: this.tidy_chk.isChecked(),
       comic: this.comic_chk.isChecked(),
       crossbar_i: this.crossbar_chk.isChecked(),
@@ -148,11 +148,11 @@ export class TypeR {
       shadow_y: this.shadow_y_spin.num(),
       shadow_color: this._shadow_color,
       hyphenate: this.hyph_chk.isChecked(),
-      hyph_lang: this.hyph_lang_combo.value() || "auto",
+      hyph_lang: this.hyph_lang_combo.val() || "auto",
       outline_pattern_path: this._outline_pattern_path,
       outline_pattern_krita: this._outline_pattern_ps_name,
       outline_pattern_scale: this.outline_pattern_scale_spin.num(),
-      outline_pattern_target: this.outline_pattern_target_combo.value() || "outline1",
+      outline_pattern_target: this.outline_pattern_target_combo.val() || "outline1",
       soft_outline: this.style_soft_chk.isChecked(),
       soft_outline_pattern: this.style_soft_pattern_chk.isChecked(),
       soft_outline_color: this._style_soft_color,
@@ -276,7 +276,7 @@ export class TypeR {
   }
 
   _prepared_text(text) {
-    const out = prepareText(text, this.case_combo.value() || "none", this.tidy_chk.isChecked(),
+    const out = prepareText(text, this.case_combo.val() || "none", this.tidy_chk.isChecked(),
       this.comic_chk.isChecked(), this.crossbar_chk.isChecked());
     return out.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
   }
@@ -288,7 +288,7 @@ export class TypeR {
   }
 
   _hyph_lang_for(text) {
-    return this._resolve_hyph(this.hyph_lang_combo.value() || "auto", text);
+    return this._resolve_hyph(this.hyph_lang_combo.val() || "auto", text);
   }
 
   _patterns_on() {
@@ -328,15 +328,15 @@ export class TypeR {
       bold: this.bold_chk.isChecked(),
       italic: this.italic_chk.isChecked(),
       underline: this.underline_chk.isChecked(),
-      align: this.align_combo.value() || "center",
-      case: this.case_combo.value() || "none",
+      align: this.align_combo.val() || "center",
+      case: this.case_combo.val() || "none",
       tidy: this.tidy_chk.isChecked(),
       shape: this.auto_chk.isChecked() && this.round_chk.isChecked() ? "ellipse" : "rect",
       shadow: this.shadow_chk.isChecked(),
       shadowColor: this._shadow_color,
       shadowDx: this.shadow_x_spin.num(),
       shadowDy: this.shadow_y_spin.num(),
-      valign: this.valign_combo.value() || "middle",
+      valign: this.valign_combo.val() || "middle",
       layerIndex: this._pairs.length ? this._index + 1 : null,
       hyphenate: this.hyph_chk.isChecked(),
       replaceExisting: this.replace_chk.isChecked(),
@@ -348,7 +348,7 @@ export class TypeR {
       outline2Color: this._outline2_color,
       outline2Px: this.outline2_spin.num(),
       patternTile: this._patterns_on() && this.outline_chk.isChecked() ? this._outline_tile() : null,
-      patternTarget: this.outline_pattern_target_combo.value() || "outline1",
+      patternTarget: this.outline_pattern_target_combo.val() || "outline1",
       soft: this._patterns_on() && this.outline_chk.isChecked() && this.style_soft_chk.isChecked(),
       softColor: this._style_soft_color,
       softPx: this.style_soft_width_spin.num(),

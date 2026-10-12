@@ -565,7 +565,7 @@ export class SfxPanel {
   // ==================================================================
 
   _strategy() {
-    return this.strategy_combo.value() || "redraw";
+    return this.strategy_combo.val() || "redraw";
   }
 
   _on_strategy_changed() {
@@ -1216,7 +1216,7 @@ export class SfxPanel {
   }
 
   _on_rule_lang_changed() {
-    const code = this.rule_lang_combo.value();
+    const code = this.rule_lang_combo.val();
     if (!code || code === this._rule_lang) return;
     this._rule_lang = code;
     SFX.set("rule_lang", code);
@@ -1225,7 +1225,7 @@ export class SfxPanel {
   }
 
   _on_mode_changed() {
-    const code = this.mode_combo.value();
+    const code = this.mode_combo.val();
     if (!code || code === this._mode) return;
     this._mode = code;
     SFX.set("mode", code);

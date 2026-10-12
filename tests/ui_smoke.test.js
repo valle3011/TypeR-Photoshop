@@ -153,6 +153,32 @@ let win = null;
 
 beforeAll(async () => {
   win = new Window({ url: "http://localhost/", width: 420, height: 1200 });
+  // walk every path on a DOM like Photoshop 2023's UXP 7.1: no append /
+  // remove / closest / matches, a force-less classList.toggle, and a native
+  // `value` property on every element (src/host/domcompat.js fills the gaps)
+  if (process.env.TYPER_MODERN_DOM !== "1") {
+    const probe = win.document.createElement("div");
+    for (let pr = Object.getPrototypeOf(probe); pr; pr = Object.getPrototypeOf(pr)) {
+      for (const k of ["append", "prepend", "remove", "closest", "matches", "replaceChildren"]) {
+        if (Object.prototype.hasOwnProperty.call(pr, k)) delete pr[k];
+      }
+    }
+    const valueStore = new WeakMap();
+    Object.defineProperty(win.HTMLElement.prototype, "value", {
+      configurable: true,
+      get() {
+        return valueStore.has(this) ? valueStore.get(this) : "";
+      },
+      set(v) {
+        valueStore.set(this, String(v));
+      },
+    });
+    const listProto = Object.getPrototypeOf(probe.classList);
+    const plainToggle = listProto.toggle;
+    listProto.toggle = function toggle(c) {
+      return plainToggle.call(this, c);
+    };
+  }
   for (const k of ["document", "HTMLElement", "Node", "Event", "KeyboardEvent", "MouseEvent", "getComputedStyle", "customElements",
     "HTMLDialogElement", "Image"]) {
     globalThis[k] = win[k];

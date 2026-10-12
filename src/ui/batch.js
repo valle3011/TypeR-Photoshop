@@ -269,7 +269,7 @@ export const BatchMethods = {
   },
 
   _on_bp_backend() {
-    const mode = this.bp_backend_combo.value() || "heur";
+    const mode = this.bp_backend_combo.val() || "heur";
     T.set("bpBackend", mode);
     show(this.bp_text_chk, mode === "heur");
   },
@@ -435,7 +435,7 @@ export const BatchMethods = {
     const style = {};
     const fam = this.font_picker.currentFamily();
     if (fam) style.font = fam;
-    const data = this.preset_combo.value();
+    const data = this.preset_combo.val();
     if (data !== undefined && data !== null) style.preset = data;
     for (const r of rows) if (r >= 0 && r < this._bp_style.length) this._bp_style[r] = { ...style };
     this._bp_batch_refresh();
@@ -805,7 +805,7 @@ export const BatchMethods = {
     try {
       boxes = await BR.detect(encodePng(grayToRgba(gray, w, hh), w, hh), {
         tile: this.bp_tile_chk.isChecked() ? "auto" : "off",
-        model: this.bp_model_combo.value() || "auto",
+        model: this.bp_model_combo.val() || "auto",
         conf: this.bp_conf_spin.num() / 100.0,
         sfxConf: this.bp_sfxconf_spin.num() / 100.0,
       });
@@ -833,7 +833,7 @@ export const BatchMethods = {
     }
     const { gray, w, h: hh } = g;
     let boxes;
-    if ((this.bp_backend_combo.value() || "heur") === "ai") {
+    if ((this.bp_backend_combo.val() || "heur") === "ai") {
       boxes = await this._bp_detect_ai(gray, w, hh);
       if (!boxes) return;
     } else {

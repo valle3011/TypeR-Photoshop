@@ -102,7 +102,7 @@ export class FontFavoritesPanel {
   }
 
   _selected_category() {
-    return this.cat_combo.value();
+    return this.cat_combo.val();
   }
 
   _reload_categories() {

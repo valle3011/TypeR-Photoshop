@@ -317,7 +317,7 @@ export const PresetMethods = {
     let boxes = {};
     let mangaSel = null;
     const collect = () => {
-      const manga = mangaSel ? mangaSel.value() : "";
+      const manga = mangaSel ? mangaSel.val() : "";
       if (!manga || !Object.keys(boxes).length) return;
       const chosen = Object.entries(boxes).filter(([, cb]) => cb.isChecked()).map(([n]) => n).sort(byLower);
       if (chosen.length) work[manga] = chosen;
@@ -328,7 +328,7 @@ export const PresetMethods = {
       const build = () => {
         clear(list);
         boxes = {};
-        const manga = mangaSel.value();
+        const manga = mangaSel.val();
         const chars = this._groups[manga] || {};
         const starred = new Set((work[manga] || []).map((c) => c.toLowerCase()));
         const names = Object.keys(chars).map(String).sort(byLower);
@@ -360,7 +360,7 @@ export const PresetMethods = {
   },
 
   _char_context_menu(e) {
-    const ch = this.char_combo.value();
+    const ch = this.char_combo.val();
     if (!ch) return;
     const isMain = this._is_main_char(ch);
     popupMenu(e, [
@@ -485,7 +485,7 @@ export const PresetMethods = {
   },
 
   _on_group_selected() {
-    const g = this.group_combo.value();
+    const g = this.group_combo.val();
     if (g !== undefined && g in this._groups) {
       this._group = g;
       this._char = "";
@@ -515,7 +515,7 @@ export const PresetMethods = {
   },
 
   on_group_delete() {
-    const g = this.group_combo.value();
+    const g = this.group_combo.val();
     if (g === undefined || !(g in this._groups)) {
       this._set_status(this._tr("st_group_none"), true);
       return;
@@ -550,7 +550,7 @@ export const PresetMethods = {
   },
 
   _on_char_selected() {
-    const ch = this.char_combo.value();
+    const ch = this.char_combo.val();
     if (ch !== undefined && ch in this._cur_chars()) {
       this._char = ch;
       this._apply_default_preset();
@@ -577,7 +577,7 @@ export const PresetMethods = {
   },
 
   on_char_delete() {
-    const ch = this.char_combo.value();
+    const ch = this.char_combo.val();
     if (ch === undefined || !(ch in this._cur_chars())) {
       this._set_status(this._tr("st_char_none"), true);
       return;
@@ -614,7 +614,7 @@ export const PresetMethods = {
         items.push({ label: keyed(isMain ? "★ " + label : label, ch, name), value: [ch, name] });
       }
     }
-    const prev = this.preset_combo.value();
+    const prev = this.preset_combo.val();
     this.preset_combo.setItems(items, false);
     if (select !== null) this.preset_combo.setValue(select);
     else if (prev !== undefined && prev !== null) this.preset_combo.setValue(prev);
@@ -622,7 +622,7 @@ export const PresetMethods = {
   },
 
   _on_preset_selected() {
-    const [ch, name] = this._preset_ref(this.preset_combo.value());
+    const [ch, name] = this._preset_ref(this.preset_combo.val());
     this._sync_preset_key_edit();
     const presets = this._cur_chars()[ch] || {};
     if (name && name in presets) {
@@ -645,13 +645,13 @@ export const PresetMethods = {
 
   _sync_preset_key_edit() {
     if (!this.preset_key_edit) return;
-    const [ch, name] = this._preset_ref(this.preset_combo.value());
+    const [ch, name] = this._preset_ref(this.preset_combo.val());
     this.preset_key_edit.setKey(LP.keybindFor(this._keybinds, this._group, ch, name) || "");
     this.preset_key_edit.setEnabled(!!name);
   },
 
   _on_preset_key_edited() {
-    const [ch, name] = this._preset_ref(this.preset_combo.value());
+    const [ch, name] = this._preset_ref(this.preset_combo.val());
     if (!name) {
       this._sync_preset_key_edit();
       this._set_status(this._tr("st_preset_none"), true);
@@ -671,7 +671,7 @@ export const PresetMethods = {
   },
 
   on_preset_key_clear() {
-    const [ch, name] = this._preset_ref(this.preset_combo.value());
+    const [ch, name] = this._preset_ref(this.preset_combo.val());
     if (!name) {
       this._sync_preset_key_edit();
       return;
@@ -740,7 +740,7 @@ export const PresetMethods = {
   // -- save / delete ------------------------------------------------------------------------------------------
 
   async on_preset_save() {
-    const [, current] = this._preset_ref(this.preset_combo.value());
+    const [, current] = this._preset_ref(this.preset_combo.val());
     let name = await promptBox(this._tr("preset_name_dlg"), this._tr("preset_name_prompt"), current);
     if (name === null) return;
     name = name.trim();
@@ -759,7 +759,7 @@ export const PresetMethods = {
   },
 
   on_preset_delete() {
-    const [ch, name] = this._preset_ref(this.preset_combo.value());
+    const [ch, name] = this._preset_ref(this.preset_combo.val());
     const presets = this._cur_chars()[ch] || {};
     if (!name || !(name in presets)) {
       this._set_status(this._tr("st_preset_none"), true);

@@ -154,7 +154,7 @@ export function Check(text, opts = {}) {
 }
 
 /**
- * A dropdown. items = [{label, value, separator?}]. value() / setValue() /
+ * A dropdown. items = [{label, value, separator?}]. val() / setValue() /
  * setItems() / index(). onChange(value) fires on user changes only; like Qt's
  * `activated`, re-picking the same entry fires again when `activated` is set.
  */
@@ -166,7 +166,7 @@ export function Select(items = [], opts = {}) {
   let silent = false;
   let lastIdx = -1;
   el.setItems = (list, keep = true) => {
-    const prev = keep ? el.value() : undefined;
+    const prev = keep ? el.val() : undefined;
     silent = true;
     clear(menu);
     values = [];
@@ -205,7 +205,9 @@ export function Select(items = [], opts = {}) {
     if (k >= 0) return k;
     return typeof el.selectedIndex === "number" ? el.selectedIndex : lastIdx;
   };
-  el.value = () => {
+  // not `value`: UXP's native <sp-picker> owns a `value` property and
+  // would swallow the method (Photoshop 2023: "value is not a function")
+  el.val = () => {
     const i = el.index();
     return i >= 0 && i < values.length ? values[i] : undefined;
   };
@@ -235,7 +237,7 @@ export function Select(items = [], opts = {}) {
     const i = el.index();
     const same = i === lastIdx;
     lastIdx = i;
-    if (opts.onChange && (!same || opts.activated)) opts.onChange(el.value());
+    if (opts.onChange && (!same || opts.activated)) opts.onChange(el.val());
   });
   el.setItems(items, false);
   return el;
@@ -492,7 +494,7 @@ export async function chooseBox(title, labelText, items, okLabel = "OK", cancelL
     sel = Select(items.map((t, i) => ({ label: t, value: i })));
     body.appendChild(sel);
   }, [{ label: cancelLabel, value: false }, { label: okLabel, value: true, variant: "cta" }]);
-  return r === true ? sel.value() : null;
+  return r === true ? sel.val() : null;
 }
 
 // --- popup menus ----------------------------------------------------------------
